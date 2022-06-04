@@ -1,25 +1,24 @@
 import swisseph.*;
-
 import static swisseph.SweConst.*;
 
 public class Main {
+
+
     //    private static ArrayList<String> planetsList = new ArrayList<String>();
 //    public static void setPlanetsList() {
 //        planetsList.add("Sun");
 //        planetsList.add("Moon");
 //    }
-    //Latitude & Longitude
+    //Set Latitude & Longitude
     public static double place_lat = 12.9716;
     public static double place_lon = 77.5946;
 
     //Get today's date and convert to julday
     static int hours = 14;
     static double minutes = 46;
-    static double seconds = 4;
     static SweDate sd = new SweDate(2022, 6, 4, hours + (minutes / 60), true);
     public static double jd = sd.getJulDay();
     public static double deltaT = sd.getDeltaT();
-    //Add curr_jd + deltaT
     public static double curr_jd = jd + deltaT;
 
     public static SwissEph sw = new SwissEph();
@@ -27,21 +26,25 @@ public class Main {
     //Main method begins here
     public static void main(String[] args) {
 
-        //Print all planetary positions
-        for (int i = 0; i < 11; i++) {
-            double my_obj_lon = getObjLon(i, curr_jd);
-            System.out.println(sw.swe_get_planet_name(i) + " " + my_obj_lon % 30);
-        }
+        //Initialize a new chart object
+        Chart chart1 = new Chart();
 
-//        setPlanetsList();
-//        System.out.println(planetsList);
+        //initialize parameters
+        SweDate sd = new SweDate(2022, 6, 4, hours + (minutes / 60), true);
+        chart1.setBirthDate(sd);
+        chart1.setBirthLon(77.5946);
+        chart1.setBirthLat(12.9716);
+        chart1.setBirthName("Mastergaru");
+
+        //populate planetary positions
+        chart1.calcPlanetAndHousePositions();
 
         //Calculate house positions
         double[] house_cusps = new double[13];
         double[] ascmc_data = new double[10];
         sw.swe_houses(curr_jd, 0, place_lat, place_lon, 'P', house_cusps, ascmc_data);
 
-        //store asc and results
+        //store asc and other results
         double asc = ascmc_data[0];
         double mc = ascmc_data[1];
 
@@ -49,7 +52,6 @@ public class Main {
         for (int i = 1; i < 13; i++) {
             System.out.println("House " + i + ":" + house_cusps[i] % 30);
         }
-        System.out.println("Ascendant is: " + asc % 30);
     }
 
     //Gets a specified object's longitude
@@ -66,4 +68,7 @@ public class Main {
         //System.out.println("Returning obj lon: "+obj_data[0]);
         return obj_data[0];
     }
+
+
+
 }
