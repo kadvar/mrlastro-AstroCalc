@@ -12,6 +12,8 @@ public class Main {
         double[] planet_lon = new double [6];
         StringBuffer sb = new StringBuffer();
         sw.swe_calc_ut(sd.getJulDay(), 1, SEFLG_TRUEPOS, planet_lon, sb);
+
+        //Print the planet's lon
         System.out.println(planet_lon[0] % 30);
     }
 }
