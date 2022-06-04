@@ -1,41 +1,69 @@
 import swisseph.*;
+
 import static swisseph.SweConst.*;
 
 public class Main {
+    //    private static ArrayList<String> planetsList = new ArrayList<String>();
+//    public static void setPlanetsList() {
+//        planetsList.add("Sun");
+//        planetsList.add("Moon");
+//    }
+    //Latitude & Longitude
+    public static double place_lat = 12.9716;
+    public static double place_lon = 77.5946;
+
+    //Get today's date and convert to julday
+    static int hours = 14;
+    static double minutes = 46;
+    static double seconds = 4;
+    static SweDate sd = new SweDate(2022, 6, 4, hours + (minutes / 60), true);
+    public static double jd = sd.getJulDay();
+    public static double deltaT = sd.getDeltaT();
+    //Add curr_jd + deltaT
+    public static double curr_jd = jd + deltaT;
+
+    public static SwissEph sw = new SwissEph();
+
+    //Main method begins here
     public static void main(String[] args) {
-        SwissEph sw = new SwissEph();
-
-        //Get today's date and convert to julDay
-        SweDate sd = new SweDate();
-
-        //Testing getObjLon
-        double curr_jd = sd.getJulDay();
-        getObjLon(0, sd.getJulDay());
 
         //Print all planetary positions
-        for (int i=0; i<11; i++) {
-            double my_obj_lon = getObjLon(i, curr_jd) % 30;
-            System.out.println(sw.swe_get_planet_name(i)+" "+my_obj_lon);
+        for (int i = 0; i < 11; i++) {
+            double my_obj_lon = getObjLon(i, curr_jd);
+            System.out.println(sw.swe_get_planet_name(i) + " " + my_obj_lon % 30);
         }
+
+//        setPlanetsList();
+//        System.out.println(planetsList);
+
+        //Calculate house positions
+        double[] house_cusps = new double[13];
+        double[] ascmc_data = new double[10];
+        sw.swe_houses(curr_jd, 0, place_lat, place_lon, 'P', house_cusps, ascmc_data);
+
+        //store asc and results
+        double asc = ascmc_data[0];
+        double mc = ascmc_data[1];
+
+        //get house cusps
+        for (int i = 1; i < 13; i++) {
+            System.out.println("House " + i + ":" + house_cusps[i] % 30);
+        }
+        System.out.println("Ascendant is: " + asc % 30);
     }
 
     //Gets a specified object's longitude
     private static double getObjLon(int obj, double jd) {
-
         //Setup preparers for swe_calc_ut()
-        SwissEph sw = new SwissEph();
-        double[] obj_data = new double [6];
+        double[] obj_data = new double[6];
         StringBuffer sb = new StringBuffer();
 
         //calc position and store in obj_lon
-
         sw.swe_calc_ut(jd, obj, SEFLG_TRUEPOS, obj_data, sb);
 //        sw.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI);
 //        sw.swe_calc_ut(jd, obj, SEFLG_SIDEREAL|SE_SPLIT_DEG_KEEP_SIGN, obj_data, sb);
-
         //return obj lon only
         //System.out.println("Returning obj lon: "+obj_data[0]);
         return obj_data[0];
     }
-
 }
