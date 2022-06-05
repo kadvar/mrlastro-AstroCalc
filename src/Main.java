@@ -9,13 +9,33 @@ public class Main {
         Chart chart1 = new Chart();
 
         //initialize parameters
-        int hours = 18;
-        double minutes = 15;
-        SweDate sd = new SweDate(2022, 6, 4, hours + (minutes / 60), true);
+        int year = 2022;
+        int month = 6;
+        int day = 5;
+        int hour = 12;
+        double minute = 9;
+        double sec = 0;
+        double lat = 12.9716;
+        double lon = 77.5946;
+        double tz = 5.5;
+        String birthName = "Mastergaru";
+
+        //Create SweDate object
+        SweDate sd = new SweDate(year, month, day, hour + (minute / 60), true);
+        System.out.println("Local time is: "+sd.getHour());
+        //convert to UTC time
+        //double sd_utc_hour = sd.getHour() + sd.getDeltaT();
+
+        /*UTC Conversion*/
+        SDate sdate_utc = sd.getUTCFromLocalTime(year, month, day, hour, (int) minute, sec, tz);
+        System.out.println(sdate_utc.hour);
+//        System.out.println("UTC Time is: "+sdate_utc.+":"+sdate_utc.minute);
+
+        //Set chart parameters and calculate chart
         chart1.setBirthDate(sd);
-        chart1.setBirthLon(77.5946);
-        chart1.setBirthLat(12.9716);
-        chart1.setBirthName("Mastergaru");
+        chart1.setBirthLon(lon);
+        chart1.setBirthLat(lat);
+        chart1.setBirthName(birthName);
 
         //populate planetary positions
         chart1.calcPlanetAndHousePositions();
