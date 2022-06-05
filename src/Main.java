@@ -1,4 +1,8 @@
 import swisseph.*;
+
+import java.time.*;
+import java.util.Date;
+
 import static swisseph.SweConst.*;
 
 public class Main {
@@ -12,7 +16,7 @@ public class Main {
         int year = 2022;
         int month = 6;
         int day = 5;
-        int hour = 12;
+        int hour = 13;
         double minute = 9;
         double sec = 0;
         double lat = 12.9716;
@@ -20,16 +24,28 @@ public class Main {
         double tz = 5.5;
         String birthName = "Mastergaru";
 
+        //Get current date/time
+        LocalDateTime localDateTime = LocalDateTime.now();
+        System.out.println("LocalDateTime: "+localDateTime);
+
+        //Get current time at location (India)
+        ZoneId zoneIdIndia = ZoneId.of("Asia/Kolkata");
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, zoneIdIndia);
+        System.out.println("Current d&t in India: "+zonedDateTime);
+
+        //Convert to UTC
+        ZonedDateTime utcDate = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
+        System.out.println("Current d&t in GMT: "+utcDate);
+
+        int hour_gmt = utcDate.getHour();
+        double minute_gmt = utcDate.getMinute();
+        double sec_gmt = utcDate.getSecond();
+
         //Create SweDate object
-        SweDate sd = new SweDate(year, month, day, hour + (minute / 60), true);
-        System.out.println("Local time is: "+sd.getHour());
+        SweDate sd = new SweDate(year, month, day, hour_gmt + (minute_gmt / 60), true);
         //convert to UTC time
         //double sd_utc_hour = sd.getHour() + sd.getDeltaT();
 
-        /*UTC Conversion*/
-        SDate sdate_utc = sd.getUTCFromLocalTime(year, month, day, hour, (int) minute, sec, tz);
-        System.out.println(sdate_utc.hour);
-//        System.out.println("UTC Time is: "+sdate_utc.+":"+sdate_utc.minute);
 
         //Set chart parameters and calculate chart
         chart1.setBirthDate(sd);
