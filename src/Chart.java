@@ -7,10 +7,9 @@ import swisseph.*;
 import java.util.*;
 
 
-import static swisseph.SweConst.SEFLG_SPEED;
-import static swisseph.SweConst.SEFLG_TRUEPOS;
-
 import swisseph.SDate;
+
+import static swisseph.SweConst.*;
 
 public class Chart {
     private String birthName;
@@ -36,6 +35,38 @@ public class Chart {
         zodiacSigns.put(9, "capricorn");
         zodiacSigns.put(10, "aquarius");
         zodiacSigns.put(11, "pisces");
+    }
+
+    static HashMap nakshatras = new HashMap<>();
+
+    static {
+        nakshatras.put(1, "Aśvinī");
+        nakshatras.put(2, "Bharaṇī");
+        nakshatras.put(3, "Kṛttikā");
+        nakshatras.put(4, "Rohiṇī");
+        nakshatras.put(5, "Mṛgaśirā");
+        nakshatras.put(6, "Ārdrā");
+        nakshatras.put(7, "Punarvasū");
+        nakshatras.put(8, "Puṣya");
+        nakshatras.put(9, "Āśleṣā");
+        nakshatras.put(10, "Maghā");
+        nakshatras.put(11, "Pūrvaphalgunī");
+        nakshatras.put(12, "Uttaraphalgunī");
+        nakshatras.put(13, "Hasta");
+        nakshatras.put(14, "Cittā");
+        nakshatras.put(15, "Svāti");
+        nakshatras.put(16, "Viśākhā");
+        nakshatras.put(17, "Anurādhā");
+        nakshatras.put(18, "Jyeṣṭhā");
+        nakshatras.put(19, "Mūlā");
+        nakshatras.put(20, "Pūrvāṣāḍhā");
+        nakshatras.put(21, "Uttarāṣāḍhā");
+        nakshatras.put(22, "Śravaṇā");
+        nakshatras.put(23, "Dhaniṣṭhā");
+        nakshatras.put(24, "Śatabhiṣā");
+        nakshatras.put(25, "Pūrvābhādrā");
+        nakshatras.put(26, "Uttarābhādrā");
+        nakshatras.put(27, "Revatī");
     }
 
     public double getBirthLat() {
@@ -71,7 +102,7 @@ public class Chart {
     }
 
     /* Populates planet and house positions into hashmap */
-    public void calcPlanetAndHousePositions() {
+    public AbstractMap<Object, ArrayList> calcPlanetAndHousePositions() {
         //Setup preparers for swe_calc_ut()
         double[] od = new double[6];
         StringBuffer sb = new StringBuffer();
@@ -88,7 +119,7 @@ public class Chart {
 
         for (int i = 0; i < 11; i++) {
             //set the speed flag (for lonspeed)
-            sw.swe_calc_ut(jd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
+            sw.swe_calc_ut(curr_jd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
             double obj_lon = od[0];
             double lon_speed = od[3];
             //check if planet is retrogade
@@ -123,11 +154,10 @@ public class Chart {
         double[] ascmc_data = new double[10];
         sw.swe_houses(curr_jd, 0, birthLat, birthLon, 'P', house_cusps, ascmc_data);
 
-        //store asc and other results
+        //store asc and other results,
+        //iterate over results and get house cusp d,m,s
         double asc = ascmc_data[0];
         double mc = ascmc_data[1];
-
-        //Calculate all house cusps
         for (int j = 1; j < 13; j++) {
 
             //initialize outputs vars to store split d,m,s
@@ -151,6 +181,49 @@ public class Chart {
         }
 
         System.out.println(planetsHousesMap);
+        for (int i = 0; i < 11; i++) {
+            getNakshatraOfPlanet(i, 0);
+        }
+
+        return planetsHousesMap;
+    }
+
+    /*Returns the Nakshatra and pada for a given planet*/
+    /*supports lahiri ayanamsa, */
+    /*if no valid ayanamsa is given, calculations are tropical*/
+
+    public int getNakshatraOfPlanet(int planet_name, int ayanamsa_type) {
+
+        //Setup vars for swe_calc_ut
+        double[] od = new double[6];
+        StringBuffer sb = new StringBuffer();
+        //convert the birthdate to Julian
+        double jd = birthDate.getJulDay();
+        double deltaT = birthDate.getDeltaT();
+        double curr_jd = jd + deltaT;
+
+        //calculate planet's position depending on ayanamsa
+        if (ayanamsa_type == SE_SIDM_LAHIRI) {
+            sw.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI);
+            sw.swe_calc_ut(jd, planet_name, SEFLG_SIDEREAL, od, sb);
+
+        } else {
+            sw.swe_calc_ut(curr_jd, planet_name, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
+        }
+        //There are 27 nakshatras, so each nakshatra is
+        double one_nak = 360.00 / 27;
+        //Number of nakshatras elapsed
+        int naks_elapsed = (int) (od[0] / one_nak);
+        int curr_nakshatra = (naks_elapsed + 1) % 27;
+
+        System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planet_name) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(curr_nakshatra));
+
+//        plList.add(obj_lon);
+//        plList.add(ideg.val + "\"" + imin.val + "'" + isec.val);
+//        plList.add(zodiacSigns.get(isgn.val));
+
+
+        return 1;
     }
 
 }
