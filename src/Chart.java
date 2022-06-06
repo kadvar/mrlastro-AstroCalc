@@ -4,14 +4,12 @@
 
 import swisseph.*;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 
 
 import static swisseph.SweConst.SEFLG_SPEED;
 import static swisseph.SweConst.SEFLG_TRUEPOS;
+
 import swisseph.SDate;
 
 public class Chart {
@@ -20,10 +18,11 @@ public class Chart {
     private double birthLon;
     private SweDate birthDate;
     public static SwissEph sw = new SwissEph();
-    private HashMap<String, ArrayList> planetsHousesMap = new HashMap<>();
+    private HashMap<Object, ArrayList> planetsHousesMap = new HashMap<>();
     private SwissLib sl = new SwissLib();
 
     static HashMap zodiacSigns = new HashMap<>();
+
     static {
         zodiacSigns.put(0, "aries");
         zodiacSigns.put(1, "taurus");
@@ -82,15 +81,17 @@ public class Chart {
         double deltaT = birthDate.getDeltaT();
         double curr_jd = jd + deltaT;
 
-
+        /**/
         /*calculate planetary positions*/
+        /**/
+        boolean isRetrogade = false;
+
         for (int i = 0; i < 11; i++) {
             //set the speed flag (for lonspeed)
-            sw.swe_calc_ut(jd, i, SEFLG_TRUEPOS|SEFLG_SPEED, od, sb);
+            sw.swe_calc_ut(jd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
             double obj_lon = od[0];
             double lon_speed = od[3];
             //check if planet is retrogade
-            boolean isRetrogade = false;
             if (lon_speed < 0) {
                 isRetrogade = true;
             }
@@ -105,14 +106,16 @@ public class Chart {
             //Convert lon to d,m,s,sign
             sl.swe_split_deg(obj_lon, SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg, imin, isec, dsecfr, isgn);
 
-            //Store everything in HashMap
+            //Store planet details in a local list
             ArrayList<Object> plList = new ArrayList<Object>();
+            //plList.add((sw.swe_get_planet_name(i)).toLowerCase());
             plList.add(obj_lon);
-            plList.add(ideg.val+"\""+imin.val+"'"+isec.val);
+            plList.add(ideg.val + "\"" + imin.val + "'" + isec.val);
             plList.add(zodiacSigns.get(isgn.val));
             plList.add(isRetrogade);
-            planetsHousesMap.put(sw.swe_get_planet_name(i), plList);
 
+            //Now store it in the hashmap
+            planetsHousesMap.put((sw.swe_get_planet_name(i)).toLowerCase(), plList);
             //System.out.println(sw.swe_get_planet_name(i) + " " + ideg.val + " " + imin.val + " " + isec.val +" "+zodiacSigns.get(isgn.val));
         }
         //calc house cusps
@@ -134,19 +137,20 @@ public class Chart {
             DblObj dsecfr1 = new DblObj();
             IntObj isgn1 = new IntObj();
 
-            //System.out.println("House " + j + ":" + house_cusps[j]);
-            //planetsHousesMap.put("house" + (j), house_cusps[j] % 30);
             sl.swe_split_deg(house_cusps[j], SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg1, imin1, isec1, dsecfr1, isgn1);
-            System.out.println("House" + j + " " + ideg1.val + " " + imin1.val + " " + isec1.val + " "+zodiacSigns.get(isgn1.val));
+
+            //Store house cusp details in a local list
+            ArrayList<Object> hList = new ArrayList<Object>();
+            hList.add(house_cusps[j]);
+            hList.add(ideg1.val + "\"" + imin1.val + "'" + isec1.val);
+            hList.add(zodiacSigns.get(isgn1.val));
+            //we don't care if house is retrogade
+            hList.add(false);
+            //store house data into map
+            planetsHousesMap.put("house" + j, hList);
         }
 
         System.out.println(planetsHousesMap);
     }
-
-    public void convertLocalToUTC(int year, int month, int day, double hour) {
-        SDate sd = new SDate(2022, 1, 1, 10);
-        //SDate sd = new SDate(year, month, day, hour);
-    }
-
 
 }

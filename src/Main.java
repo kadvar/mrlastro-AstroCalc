@@ -20,8 +20,8 @@ public class Main {
         String birthName = "Mastergaru";
 
         //Get current date/time
-//        LocalDateTime localDateTime = LocalDateTime.now();
-        LocalDateTime localDateTime = LocalDateTime.of(year, month, day, hour, (int)minute);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        //LocalDateTime localDateTime = LocalDateTime.of(year, month, day, hour, (int)minute);
 
         //Get current time at location (India)
         ZoneId zoneIdIndia = ZoneId.of("Asia/Kolkata");
