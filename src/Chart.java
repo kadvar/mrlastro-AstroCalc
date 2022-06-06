@@ -118,6 +118,9 @@ public class Chart {
         boolean isRetrogade = false;
 
         for (int i = 0; i < 11; i++) {
+            //Calculate Nirayana nakshatras of all planets
+            String curr_nakshatra = (getNakshatraOfPlanet(i, 1)).toLowerCase();
+
             //set the speed flag (for lonspeed)
             sw.swe_calc_ut(curr_jd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
             double obj_lon = od[0];
@@ -143,12 +146,14 @@ public class Chart {
             plList.add(obj_lon);
             plList.add(ideg.val + "\"" + imin.val + "'" + isec.val);
             plList.add(zodiacSigns.get(isgn.val));
+            plList.add(curr_nakshatra);
             plList.add(isRetrogade);
 
             //Now store it in the hashmap
             planetsHousesMap.put((sw.swe_get_planet_name(i)).toLowerCase(), plList);
             //System.out.println(sw.swe_get_planet_name(i) + " " + ideg.val + " " + imin.val + " " + isec.val +" "+zodiacSigns.get(isgn.val));
         }
+
         //calc house cusps
         double[] house_cusps = new double[13];
         double[] ascmc_data = new double[10];
@@ -181,9 +186,6 @@ public class Chart {
         }
 
         System.out.println(planetsHousesMap);
-        for (int i = 0; i < 11; i++) {
-            getNakshatraOfPlanet(i, 0);
-        }
 
         return planetsHousesMap;
     }
@@ -192,7 +194,7 @@ public class Chart {
     /*supports lahiri ayanamsa, */
     /*if no valid ayanamsa is given, calculations are tropical*/
 
-    public int getNakshatraOfPlanet(int planet_name, int ayanamsa_type) {
+    public String getNakshatraOfPlanet(int planet_name, int ayanamsa_type) {
 
         //Setup vars for swe_calc_ut
         double[] od = new double[6];
@@ -216,14 +218,16 @@ public class Chart {
         int naks_elapsed = (int) (od[0] / one_nak);
         int curr_nakshatra = (naks_elapsed + 1) % 27;
 
-        System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planet_name) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(curr_nakshatra));
+        //calc nakshatra pada
+        double one_pada = 360.00 / 108;
+        int padas_elapsed = (int) (od[0] / one_pada);
+        int curr_pada = (padas_elapsed + 1) % 4;
+        //replace pada 0 with 4
+        if (curr_pada == 0) { curr_pada = 4; }
 
-//        plList.add(obj_lon);
-//        plList.add(ideg.val + "\"" + imin.val + "'" + isec.val);
-//        plList.add(zodiacSigns.get(isgn.val));
+        //System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planet_name) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(curr_nakshatra)+ "("+curr_pada+")");
+        return nakshatras.get(curr_nakshatra)+"("+curr_pada+")";
 
-
-        return 1;
     }
 
 }
