@@ -1,51 +1,49 @@
 import swisseph.*;
-
 import java.time.*;
-import java.util.Date;
-
-import static swisseph.SweConst.*;
 
 public class Main {
 
     public static void main(String[] args) {
-
-        //Initialize a new chart object
-        Chart chart1 = new Chart();
-
         //initialize parameters
         int year = 2022;
-        int month = 6;
-        int day = 5;
-        int hour = 13;
-        double minute = 9;
+        int month = 7;
+        int day = 10;
+        int hour = 12;
+        double minute = 25;
         double sec = 0;
+//        double lat = 17.3850;
+//        double lon = 78.4867;
+//        double tz = 5.5;
+
         double lat = 12.9716;
         double lon = 77.5946;
-        double tz = 5.5;
         String birthName = "Mastergaru";
 
         //Get current date/time
-        LocalDateTime localDateTime = LocalDateTime.now();
-        System.out.println("LocalDateTime: "+localDateTime);
+//        LocalDateTime localDateTime = LocalDateTime.now();
+        LocalDateTime localDateTime = LocalDateTime.of(year, month, day, hour, (int)minute);
 
         //Get current time at location (India)
         ZoneId zoneIdIndia = ZoneId.of("Asia/Kolkata");
         ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, zoneIdIndia);
-        System.out.println("Current d&t in India: "+zonedDateTime);
+        System.out.println("Current d&t: "+zonedDateTime);
 
         //Convert to UTC
         ZonedDateTime utcDate = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC);
         System.out.println("Current d&t in GMT: "+utcDate);
 
+        int day_gmt = utcDate.getDayOfMonth();
+        int month_gmt = utcDate.getMonthValue();
+        int year_gmt = utcDate.getYear();
         int hour_gmt = utcDate.getHour();
         double minute_gmt = utcDate.getMinute();
         double sec_gmt = utcDate.getSecond();
 
-        //Create SweDate object
-        SweDate sd = new SweDate(year, month, day, hour_gmt + (minute_gmt / 60), true);
-        //convert to UTC time
-        //double sd_utc_hour = sd.getHour() + sd.getDeltaT();
+        //Initialize a new chart object
+        Chart chart1 = new Chart();
 
+        //Create SweDate object
+        SweDate sd = new SweDate(year_gmt, month_gmt, day_gmt, hour_gmt + (minute_gmt / 60), true);
 
         //Set chart parameters and calculate chart
         chart1.setBirthDate(sd);
