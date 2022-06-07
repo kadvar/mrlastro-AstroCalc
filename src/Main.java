@@ -51,8 +51,10 @@ public class Main {
         chart1.setBirthLat(lat);
         chart1.setBirthName(birthName);
 
-        //populate planetary positions
+        //compute planetary & house positions
         chart1.calcPlanetAndHousePositions();
+        //compute D1,D2,D3,D9,D12,D30 charts
+        chart1.getDivisionalCharts();
     }
 }
 

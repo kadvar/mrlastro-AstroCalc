@@ -7,8 +7,6 @@ import swisseph.*;
 import java.util.*;
 
 
-import swisseph.SDate;
-
 import static swisseph.SweConst.*;
 
 public class Chart {
@@ -69,6 +67,10 @@ public class Chart {
         nakshatras.put(27, "Revatī");
     }
 
+    String[] zodiacSignsArray = new String[] {"aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"};
+    String[] oddSigns = new String[] {"aries", "gemini", "leo", "libra", "sagittarius", "aquarius"};
+
+
     public double getBirthLat() {
         return birthLat;
     }
@@ -110,43 +112,29 @@ public class Chart {
         //convert the birthdate to Julian
         double jd = birthDate.getJulDay();
         double deltaT = birthDate.getDeltaT();
-        double curr_jd = jd + deltaT;
+        double currJd = jd + deltaT;
 
         /**/
-        /*calculate planetary positions*/
+        /*calculate planetary & house positions*/
         /**/
         boolean isRetrogade = false;
-
         for (int i = 0; i < 11; i++) {
             //Calculate Nirayana nakshatras of all planets
-            String curr_nakshatra = (getNakshatraOfPlanet(i, 1)).toLowerCase();
+            String currNakshatra = (getNakshatra(i, 1)).toLowerCase();
 
             //set the speed flag (for lonspeed)
-            sw.swe_calc_ut(curr_jd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
-            double obj_lon = od[0];
-            double lon_speed = od[3];
+            sw.swe_calc_ut(currJd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
+            double objLon = od[0];
+            double lonSpeed = od[3];
             //check if planet is retrogade
-            if (lon_speed < 0) {
+            if (lonSpeed < 0) {
                 isRetrogade = true;
             }
 
-            //initialize vars to store [d,m,s,sign] values
-            IntObj ideg = new IntObj();
-            IntObj imin = new IntObj();
-            IntObj isec = new IntObj();
-            DblObj dsecfr = new DblObj();
-            IntObj isgn = new IntObj();
-
-            //Convert lon to d,m,s,sign
-            sl.swe_split_deg(obj_lon, SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg, imin, isec, dsecfr, isgn);
-
             //Store planet details in a local list
             ArrayList<Object> plList = new ArrayList<Object>();
-            //plList.add((sw.swe_get_planet_name(i)).toLowerCase());
-            plList.add(obj_lon);
-            plList.add(ideg.val + "\"" + imin.val + "'" + isec.val);
-            plList.add(zodiacSigns.get(isgn.val));
-            plList.add(curr_nakshatra);
+            plList = convertToDMSZ(objLon);
+            plList.add(currNakshatra);
             plList.add(isRetrogade);
 
             //Now store it in the hashmap
@@ -155,46 +143,48 @@ public class Chart {
         }
 
         //calc house cusps
-        double[] house_cusps = new double[13];
-        double[] ascmc_data = new double[10];
-        sw.swe_houses(curr_jd, 0, birthLat, birthLon, 'P', house_cusps, ascmc_data);
+        double[] houseCusps = new double[13];
+        double[] asmcData = new double[10];
+        sw.swe_houses(currJd, 0, birthLat, birthLon, 'P', houseCusps, asmcData);
 
-        //store asc and other results,
-        //iterate over results and get house cusp d,m,s
-        double asc = ascmc_data[0];
-        double mc = ascmc_data[1];
         for (int j = 1; j < 13; j++) {
-
-            //initialize outputs vars to store split d,m,s
-            IntObj ideg1 = new IntObj();
-            IntObj imin1 = new IntObj();
-            IntObj isec1 = new IntObj();
-            DblObj dsecfr1 = new DblObj();
-            IntObj isgn1 = new IntObj();
-
-            sl.swe_split_deg(house_cusps[j], SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg1, imin1, isec1, dsecfr1, isgn1);
-
-            //Store house cusp details in a local list
+            String currNakshatra = (getNakshatra(j, 1)).toLowerCase();
             ArrayList<Object> hList = new ArrayList<Object>();
-            hList.add(house_cusps[j]);
-            hList.add(ideg1.val + "\"" + imin1.val + "'" + isec1.val);
-            hList.add(zodiacSigns.get(isgn1.val));
+            hList = convertToDMSZ(houseCusps[j]);
+            hList.add(currNakshatra);
             //we don't care if house is retrogade
             hList.add(false);
             //store house data into map
             planetsHousesMap.put("house" + j, hList);
         }
-
         System.out.println(planetsHousesMap);
-
         return planetsHousesMap;
+    }
+
+/*Returns longitude in d,m,s,z*/
+    public ArrayList convertToDMSZ(double lon) {
+        //initialize outputs vars to store split d,m,s
+        IntObj ideg1 = new IntObj();
+        IntObj imin1 = new IntObj();
+        IntObj isec1 = new IntObj();
+        DblObj dsecfr1 = new DblObj();
+        IntObj isgn1 = new IntObj();
+
+        sl.swe_split_deg(lon, SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg1, imin1, isec1, dsecfr1, isgn1);
+
+        //Store house cusp details in a local list
+        ArrayList<Object> hList = new ArrayList<Object>();
+        hList.add(lon);
+        hList.add(ideg1.val + "\"" + imin1.val + "'" + isec1.val);
+        hList.add(zodiacSigns.get(isgn1.val));
+        return hList;
     }
 
     /*Returns the Nakshatra and pada for a given planet*/
     /*supports lahiri ayanamsa, */
     /*if no valid ayanamsa is given, calculations are tropical*/
 
-    public String getNakshatraOfPlanet(int planet_name, int ayanamsa_type) {
+    public String getNakshatra(int planetNum, int ayanamsaType) {
 
         //Setup vars for swe_calc_ut
         double[] od = new double[6];
@@ -202,32 +192,77 @@ public class Chart {
         //convert the birthdate to Julian
         double jd = birthDate.getJulDay();
         double deltaT = birthDate.getDeltaT();
-        double curr_jd = jd + deltaT;
+        double currJd = jd + deltaT;
 
         //calculate planet's position depending on ayanamsa
-        if (ayanamsa_type == SE_SIDM_LAHIRI) {
+        if (ayanamsaType == SE_SIDM_LAHIRI) {
             sw.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI);
-            sw.swe_calc_ut(jd, planet_name, SEFLG_SIDEREAL, od, sb);
+            sw.swe_calc_ut(jd, planetNum, SEFLG_SIDEREAL, od, sb);
 
         } else {
-            sw.swe_calc_ut(curr_jd, planet_name, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
+            sw.swe_calc_ut(currJd, planetNum, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
         }
         //There are 27 nakshatras, so each nakshatra is
-        double one_nak = 360.00 / 27;
+        double oneNak = 360.00 / 27;
         //Number of nakshatras elapsed
-        int naks_elapsed = (int) (od[0] / one_nak);
-        int curr_nakshatra = (naks_elapsed + 1) % 27;
+        int naksElapsed = (int) (od[0] / oneNak);
+        int currNakshatra = (naksElapsed + 1) % 27;
 
         //calc nakshatra pada
-        double one_pada = 360.00 / 108;
-        int padas_elapsed = (int) (od[0] / one_pada);
-        int curr_pada = (padas_elapsed + 1) % 4;
+        double onePada = 360.00 / 108;
+        int padasElapsed = (int) (od[0] / onePada);
+        int currPada = (padasElapsed + 1) % 4;
         //replace pada 0 with 4
-        if (curr_pada == 0) { curr_pada = 4; }
+        if (currPada == 0) {
+            currPada = 4;
+        }
 
-        //System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planet_name) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(curr_nakshatra)+ "("+curr_pada+")");
-        return nakshatras.get(curr_nakshatra)+"("+curr_pada+")";
+        //System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planetName) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(currNakshatra)+ "("+currPada+")");
+        return nakshatras.get(currNakshatra) + "(" + currPada + ")";
 
+    }
+
+    /*Returns an HashMap object with a D2,D3,D9,D12,D30 calculations*/
+
+    public void getDivisionalCharts() {
+
+        HashMap<String, Object> allObjLonsMap = new HashMap<>();
+        HashMap<Object, ArrayList> divChartsMapD2 = new HashMap<>();
+        HashMap<Object, ArrayList> divChartsMapD3 = new HashMap<>();
+        HashMap<Object, ArrayList> divChartsMapD9 = new HashMap<>();
+
+        //Setup vars for swe_calc_ut
+        double[] od = new double[6];
+        StringBuffer sb = new StringBuffer();
+        //convert the birthdate to Julian
+        double jd = birthDate.getJulDay();
+        double deltaT = birthDate.getDeltaT();
+        double currJd = jd + deltaT;
+        //Get Planet and House positions and cusps
+        for (int i = 0; i < 11; i++) {
+            //Calculate Nirayana nakshatras of all planets
+            String currNakshatra = (getNakshatra(i, 1)).toLowerCase();
+            //set the speed flag (for lonspeed)
+            sw.swe_calc_ut(currJd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
+            double objLon = od[0];
+            String planetName = (sw.swe_get_planet_name(i)).toLowerCase();
+            allObjLonsMap.put(planetName, objLon);
+            //Get all div charts
+        }
+        //Calc div charts
+        getD2chart(allObjLonsMap);
+    }
+
+    //Calculate D2 (Hora) positions
+    private String getD2chart(HashMap<String, Object> posHash) {
+        HashMap<Object, ArrayList> d2Map = new HashMap<>();
+
+        //iterate through obj, lon pairs in hashMap
+        for(Map.Entry<String, Object> entry: posHash.entrySet()) {
+            System.out.println("Key:"+entry.getKey()+" Value:"+entry.getValue());
+
+        }
+        return "";
     }
 
 }
