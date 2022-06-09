@@ -16,6 +16,7 @@ public class Chart {
     private SweDate birthDate;
     public static SwissEph sw = new SwissEph();
     private HashMap<Object, ArrayList> planetsHousesMap = new HashMap<>();
+    private HashMap<Object, ArrayList> zodiacPlanetsHousesMap = new HashMap<>();
     private SwissLib sl = new SwissLib();
 
     static HashMap zodiacSigns = new HashMap<>();
@@ -34,9 +35,7 @@ public class Chart {
         zodiacSigns.put(10, "aquarius");
         zodiacSigns.put(11, "pisces");
     }
-
     static HashMap nakshatras = new HashMap<>();
-
     static {
         nakshatras.put(1, "Aśvinī");
         nakshatras.put(2, "Bharaṇī");
@@ -67,9 +66,8 @@ public class Chart {
         nakshatras.put(27, "Revatī");
     }
 
-    String[] zodiacSignsArray = new String[] {"aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"};
-    String[] oddSigns = new String[] {"aries", "gemini", "leo", "libra", "sagittarius", "aquarius"};
-
+    List<String> zodiacSignsArray = Arrays.asList("aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces");
+    List<String> oddSigns = Arrays.asList("aries", "gemini", "leo", "libra", "sagittarius", "aquarius");
 
     public double getBirthLat() {
         return birthLat;
@@ -103,17 +101,20 @@ public class Chart {
         this.birthName = birthName;
     }
 
-    /* Populates planet and house positions into hashmap */
+    /**
+     * Populates planet and house positions into hashmap
+     *
+     * @param None:
+     * @return
+     */
     public AbstractMap<Object, ArrayList> calcPlanetAndHousePositions() {
         //Setup preparers for swe_calc_ut()
         double[] od = new double[6];
         StringBuffer sb = new StringBuffer();
-
         //convert the birthdate to Julian
         double jd = birthDate.getJulDay();
         double deltaT = birthDate.getDeltaT();
         double currJd = jd + deltaT;
-
         /**/
         /*calculate planetary & house positions*/
         /**/
@@ -121,7 +122,6 @@ public class Chart {
         for (int i = 0; i < 11; i++) {
             //Calculate Nirayana nakshatras of all planets
             String currNakshatra = (getNakshatra(i, 1)).toLowerCase();
-
             //set the speed flag (for lonspeed)
             sw.swe_calc_ut(currJd, i, SEFLG_TRUEPOS | SEFLG_SPEED, od, sb);
             double objLon = od[0];
@@ -130,13 +130,11 @@ public class Chart {
             if (lonSpeed < 0) {
                 isRetrogade = true;
             }
-
             //Store planet details in a local list
             ArrayList<Object> plList = new ArrayList<Object>();
             plList = convertToDMSZ(objLon);
             plList.add(currNakshatra);
             plList.add(isRetrogade);
-
             //Now store it in the hashmap
             planetsHousesMap.put((sw.swe_get_planet_name(i)).toLowerCase(), plList);
             //System.out.println(sw.swe_get_planet_name(i) + " " + ideg.val + " " + imin.val + " " + isec.val +" "+zodiacSigns.get(isgn.val));
@@ -146,7 +144,6 @@ public class Chart {
         double[] houseCusps = new double[13];
         double[] asmcData = new double[10];
         sw.swe_houses(currJd, 0, birthLat, birthLon, 'P', houseCusps, asmcData);
-
         for (int j = 1; j < 13; j++) {
             String currNakshatra = (getNakshatra(j, 1)).toLowerCase();
             ArrayList<Object> hList = new ArrayList<Object>();
@@ -161,7 +158,7 @@ public class Chart {
         return planetsHousesMap;
     }
 
-/*Returns longitude in d,m,s,z*/
+    /*Returns longitude in d,m,s,z*/
     public ArrayList convertToDMSZ(double lon) {
         //initialize outputs vars to store split d,m,s
         IntObj ideg1 = new IntObj();
@@ -169,9 +166,7 @@ public class Chart {
         IntObj isec1 = new IntObj();
         DblObj dsecfr1 = new DblObj();
         IntObj isgn1 = new IntObj();
-
         sl.swe_split_deg(lon, SweConst.SE_SPLIT_DEG_ROUND_MIN | SweConst.SE_SPLIT_DEG_ZODIACAL, ideg1, imin1, isec1, dsecfr1, isgn1);
-
         //Store house cusp details in a local list
         ArrayList<Object> hList = new ArrayList<Object>();
         hList.add(lon);
@@ -183,9 +178,7 @@ public class Chart {
     /*Returns the Nakshatra and pada for a given planet*/
     /*supports lahiri ayanamsa, */
     /*if no valid ayanamsa is given, calculations are tropical*/
-
     public String getNakshatra(int planetNum, int ayanamsaType) {
-
         //Setup vars for swe_calc_ut
         double[] od = new double[6];
         StringBuffer sb = new StringBuffer();
@@ -207,7 +200,6 @@ public class Chart {
         //Number of nakshatras elapsed
         int naksElapsed = (int) (od[0] / oneNak);
         int currNakshatra = (naksElapsed + 1) % 27;
-
         //calc nakshatra pada
         double onePada = 360.00 / 108;
         int padasElapsed = (int) (od[0] / onePada);
@@ -216,21 +208,16 @@ public class Chart {
         if (currPada == 0) {
             currPada = 4;
         }
-
         //System.out.println("Calculating nakshatra for " + sw.swe_get_planet_name(planetName) + " at longitude: " + od[0] + " nakshatra is:" + nakshatras.get(currNakshatra)+ "("+currPada+")");
         return nakshatras.get(currNakshatra) + "(" + currPada + ")";
-
     }
 
     /*Returns an HashMap object with a D2,D3,D9,D12,D30 calculations*/
-
     public void getDivisionalCharts() {
-
         HashMap<String, Object> allObjLonsMap = new HashMap<>();
         HashMap<Object, ArrayList> divChartsMapD2 = new HashMap<>();
         HashMap<Object, ArrayList> divChartsMapD3 = new HashMap<>();
         HashMap<Object, ArrayList> divChartsMapD9 = new HashMap<>();
-
         //Setup vars for swe_calc_ut
         double[] od = new double[6];
         StringBuffer sb = new StringBuffer();
@@ -247,22 +234,71 @@ public class Chart {
             double objLon = od[0];
             String planetName = (sw.swe_get_planet_name(i)).toLowerCase();
             allObjLonsMap.put(planetName, objLon);
-            //Get all div charts
         }
         //Calc div charts
         getD2chart(allObjLonsMap);
     }
 
     //Calculate D2 (Hora) positions
-    private String getD2chart(HashMap<String, Object> posHash) {
-        HashMap<Object, ArrayList> d2Map = new HashMap<>();
-
+    private HashMap<String, HashSet> getD2chart(HashMap<String, Object> posHash) {
+        //declare hashMap to store D2 entries by zodiac sign
+        HashMap<String, HashSet> d2Map = new HashMap<>();
         //iterate through obj, lon pairs in hashMap
-        for(Map.Entry<String, Object> entry: posHash.entrySet()) {
-            System.out.println("Key:"+entry.getKey()+" Value:"+entry.getValue());
+        for (Map.Entry<String, Object> entry : posHash.entrySet()) {
+            String obj = entry.getKey();
+            double lon = (double) entry.getValue();
+            double lonNorm = lon % 30;
+            //retrieve dmsz information for lon into a new list
+            ArrayList<Object> dmszList = new ArrayList<Object>();
+            dmszList = convertToDMSZ(lon);
+            //System.out.println(dmszList);
+            //get the zodiac sign
+            String zs = dmszList.get(2).toString();
+            //create a list to contain objs
+            //System.out.println("Key:"+entry.getKey()+" Value:"+entry.getValue());
+            if (!obj.equals("sun") && !obj.equals("moon")) {
+                //create new hashset to store aries = [pl1, pl2]..etc
+                if (oddSigns.contains(zs) && lonNorm <= 15) {
+                    //planet is in surya hora
+                    obj = "+" + obj;
+                    //add this obj (planet) to the d2Map
+                    addObjToMap(zs, obj, d2Map);
+                }
+                else if (oddSigns.contains(zs) && lonNorm > 15){
+                    //planet is in chandra hora
+                    obj = "-" + obj;
+                    addObjToMap(zs, obj, d2Map);
+                }
+                else if (!oddSigns.contains(zs) && lonNorm <= 15){
+                    //planet is in chandra hora
+                    obj = "-" + obj;
+                    addObjToMap(zs, obj, d2Map);
+                }
+                else if (!oddSigns.contains(zs) && lonNorm > 15){
+                    //planet is in chandra hora
+                    obj = "+" + obj;
+                    addObjToMap(zs, obj, d2Map);
+                }
+            }
 
         }
-        return "";
+        System.out.println(d2Map);
+        return d2Map;
+    }
+
+    /*Helper method - Adds a specified obj to given HashMap with key: zodiac sign, value: hashset with planets*/
+    public boolean addObjToMap(String zs, String obj, HashMap<String, HashSet> hm) {
+        HashSet hs;
+        if (hm.containsKey(zs)) {
+            hs = hm.get(zs);
+        } else {
+            hs = new HashSet();
+        }
+        hs.add(obj);
+        hm.put(zs, hs);
+    return true;
     }
 
 }
+
+
